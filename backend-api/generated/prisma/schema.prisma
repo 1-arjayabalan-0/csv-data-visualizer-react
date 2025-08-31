@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String?
+  firstName String?
+  lastName  String?
+  googleId  String?   @unique
+  provider  String?   @default("google")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  csvFiles  CSVFile[]
+}
+
+model CSVFile {
+  id         String   @id @default(cuid())
+  fileName   String
+  rawData    Json     @db.JsonB
+  columns    Json?
+  uploadedAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+}

@@ -1,0 +1,5 @@
+// Generate Model to Table 
+npx prisma migrate dev --name init
+
+// Generate Prisma Scripts
+npx prisma generate
