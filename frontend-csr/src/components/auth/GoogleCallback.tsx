@@ -31,8 +31,7 @@ const GoogleCallback: React.FC = () => {
     if (token && refreshToken) {
       console.log('GoogleCallback: Tokens found, calling handleGoogleCallback');
       handleGoogleCallback(token, refreshToken);
-      // Clear the URL parameters
-      window.history.replaceState({}, document.title, '/auth/callback');
+      // Don't clear URL parameters immediately - let handleGoogleCallback redirect
     } else {
       console.error('GoogleCallback: Missing tokens - token:', !!token, 'refreshToken:', !!refreshToken);
       // No tokens found, redirect to login

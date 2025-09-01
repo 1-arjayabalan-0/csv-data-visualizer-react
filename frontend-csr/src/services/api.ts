@@ -8,7 +8,7 @@ import type {
   LoginResponse,
   User,
   ChartConfig
-} from '../types/api';
+} from '../types';
 
 // Get base URL from environment or default to localhost
 const getBaseURL = () => {
@@ -28,7 +28,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // Add authentication token if available
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -54,7 +54,8 @@ api.interceptors.response.use(
       // Handle unauthorized access
       console.error('Unauthorized access - redirecting to login');
       // Clear token if it exists
-      localStorage.removeItem('authToken');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
       // Optionally redirect to login page
       // window.location.href = '/login';
     } else if (error.response?.status === 403) {
@@ -81,7 +82,7 @@ export const csvApi = {
     const formData = new FormData();
     formData.append('file', file);
     
-    return api.post('/api/csv/upload-csv', formData, {
+    return api.post('/csv/upload-csv', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -90,29 +91,29 @@ export const csvApi = {
 
   // Get latest CSV data
   getLatestCsvData: (): Promise<AxiosResponse<ApiResponse<CSVData>>> => {
-    return api.get('/api/csv/latest-csv-data');
+    return api.get('/csv/latest-csv-data');
   },
 
   // Get processed CSV data by ID
   getCsvData: (fileId: string): Promise<AxiosResponse<ApiResponse<CSVData>>> => {
-    return api.get(`/api/csv/data/${fileId}`);
+    return api.get(`/csv/data/${fileId}`);
   },
 
   // Get chart data
   getChartData: (fileId: string, chartType: string): Promise<AxiosResponse<ApiResponse<ChartData>>> => {
-    return api.get(`/api/csv/chart/${fileId}`, {
+    return api.get(`/csv/chart/${fileId}`, {
       params: { type: chartType }
     });
   },
 
   // Generate chart from CSV data
   generateChart: (fileId: string, config: ChartConfig): Promise<AxiosResponse<ApiResponse<ChartData>>> => {
-    return api.post(`/api/csv/chart/${fileId}`, config);
+    return api.post(`/csv/chart/${fileId}`, config);
   },
 
   // Delete CSV file
   deleteCsv: (fileId: string): Promise<AxiosResponse<ApiResponse<void>>> => {
-    return api.delete(`/api/csv/${fileId}`);
+    return api.delete(`/csv/${fileId}`);
   },
 
   // Health check
@@ -125,27 +126,27 @@ export const csvApi = {
 export const authApi = {
   // Login
   login: (credentials: LoginRequest): Promise<AxiosResponse<ApiResponse<LoginResponse>>> => {
-    return api.post('/api/auth/login', credentials);
+    return api.post('/auth/login', credentials);
   },
 
   // Register
   register: (userData: RegisterRequest): Promise<AxiosResponse<ApiResponse<LoginResponse>>> => {
-    return api.post('/api/auth/register', userData);
+    return api.post('/auth/register', userData);
   },
 
   // Logout
   logout: (): Promise<AxiosResponse<ApiResponse<void>>> => {
-    return api.post('/api/auth/logout');
+    return api.post('/auth/logout');
   },
 
   // Get current user
   getCurrentUser: (): Promise<AxiosResponse<ApiResponse<User>>> => {
-    return api.get('/api/auth/me');
+    return api.get('/auth/me');
   },
 
   // Refresh token
   refreshToken: (): Promise<AxiosResponse<ApiResponse<{ accessToken: string }>>> => {
-    return api.post('/api/auth/refresh');
+    return api.post('/auth/refresh');
   },
 };
 
@@ -153,17 +154,18 @@ export const authApi = {
 export const apiUtils = {
   // Set authentication token
   setAuthToken: (token: string) => {
-    localStorage.setItem('authToken', token);
+    localStorage.setItem('accessToken', token);
   },
 
   // Clear authentication token
   clearAuthToken: () => {
-    localStorage.removeItem('authToken');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
   },
 
   // Get authentication token
   getAuthToken: () => {
-    return localStorage.getItem('authToken');
+    return localStorage.getItem('accessToken');
   },
 
   // Check if user is authenticated
