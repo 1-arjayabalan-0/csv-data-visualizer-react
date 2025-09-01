@@ -1,0 +1,433 @@
+openapi: 3.0.3
+info:
+  title: CSV Data Visualizer API
+  description: |
+    A RESTful API for CSV file processing and data visualization with Google OAuth authentication.
+    
+    ## Features
+    - Google OAuth 2.0 authentication
+    - JWT token-based authorization
+    - CSV file upload and processing
+    - Data retrieval for visualization
+    - Standardized error handling
+    
+    ## Authentication
+    This API uses JWT tokens obtained through Google OAuth for authentication.
+    Include the token in the Authorization header: `Bearer <token>`
+  version: 1.0.0
+  contact:
+    name: CSV Data Visualizer API
+  license:
+    name: ISC
+
+servers:
+  - url: http://localhost:3001
+    description: Development server
+  - url: https://api.csvvisualizer.com
+    description: Production server (example)
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health Check
+      summary: Health check endpoint
+      description: Checks if the API server is running and healthy
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "OK"
+                  message:
+                    type: string
+                    example: "Backend API server is running"
+
+  /api/auth/google:
+    get:
+      tags:
+        - Authentication
+      summary: Initiate Google OAuth login
+      description: Redirects user to Google OAuth consent screen
+      responses:
+        '302':
+          description: Redirect to Google OAuth
+        '500':
+          description: OAuth configuration error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/google/callback:
+    get:
+      tags:
+        - Authentication
+      summary: Google OAuth callback
+      description: Handles Google OAuth callback and generates JWT tokens
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: OAuth authorization code from Google
+        - name: state
+          in: query
+          schema:
+            type: string
+          description: OAuth state parameter
+      responses:
+        '302':
+          description: Redirect to frontend with tokens
+          headers:
+            Location:
+              schema:
+                type: string
+                example: "http://localhost:3000/auth/callback?token=<access_token>&refresh=<refresh_token>"
+        '302 ':
+          description: Redirect to frontend with error
+          headers:
+            Location:
+              schema:
+                type: string
+                example: "http://localhost:3000/login?error=oauth_error"
+
+  /api/auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user information
+      description: Retrieves the authenticated user's profile information
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User information retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/csv/upload-csv:
+    post:
+      tags:
+        - CSV Processing
+      summary: Upload and process CSV file
+      description: |
+        Uploads a CSV file, processes it, and stores the data in the database.
+        
+        **File Requirements:**
+        - File type: CSV only (text/csv)
+        - Maximum size: 5MB
+        - File extension: .csv
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: CSV file to upload
+              required:
+                - file
+      responses:
+        '200':
+          description: File processed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/CSVUploadResponse'
+        '400':
+          description: Bad request - No file uploaded or invalid file type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                no_file:
+                  summary: No file uploaded
+                  value:
+                    message: "No file uploaded"
+                    success: false
+                    data: null
+                    error: null
+                    statusCode: 400
+                invalid_type:
+                  summary: Invalid file type
+                  value:
+                    message: "Error processing CSV file"
+                    success: false
+                    data: null
+                    error:
+                      details: "Only CSV files are allowed"
+                    statusCode: 400
+        '413':
+          description: Payload too large - File exceeds 5MB limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error - Processing or database error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/csv/latest-csv-data:
+    get:
+      tags:
+        - CSV Processing
+      summary: Get latest CSV data
+      description: Retrieves the most recently uploaded CSV file data
+      responses:
+        '200':
+          description: Latest CSV data retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/CSVDataResponse'
+        '404':
+          description: No CSV data found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: "No CSV data found"
+                success: false
+                data: null
+                error: null
+                statusCode: 404
+        '500':
+          description: Internal server error - Database error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from Google OAuth login
+
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Success message
+          example: "Operation completed successfully"
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          nullable: true
+          description: Response payload
+        error:
+          type: null
+          example: null
+        statusCode:
+          type: integer
+          description: HTTP status code
+          example: 200
+      required:
+        - message
+        - success
+        - data
+        - error
+        - statusCode
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+          example: "An error occurred"
+        success:
+          type: boolean
+          example: false
+        data:
+          type: null
+          example: null
+        error:
+          oneOf:
+            - type: string
+            - type: object
+            - type: null
+          description: Detailed error information
+          example: "Detailed error description"
+        statusCode:
+          type: integer
+          description: HTTP status code
+          example: 400
+      required:
+        - message
+        - success
+        - data
+        - error
+        - statusCode
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique user identifier (CUID)
+          example: "clxxxxx"
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "user@example.com"
+        firstName:
+          type: string
+          nullable: true
+          description: User's first name
+          example: "John"
+        lastName:
+          type: string
+          nullable: true
+          description: User's last name
+          example: "Doe"
+        createdAt:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+          example: "2024-01-15T10:30:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: "2024-01-15T10:30:00.000Z"
+      required:
+        - id
+        - email
+        - createdAt
+        - updatedAt
+
+    CSVUploadResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique CSV file identifier
+          example: "clxxxxx"
+        headers:
+          type: array
+          items:
+            type: string
+          description: CSV column headers
+          example: ["name", "age", "city", "salary"]
+        rowCount:
+          type: integer
+          description: Number of data rows processed
+          example: 150
+        fileName:
+          type: string
+          description: Original file name
+          example: "employees.csv"
+      required:
+        - id
+        - headers
+        - rowCount
+        - fileName
+
+    CSVDataResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique CSV file identifier
+          example: "clxxxxx"
+        headers:
+          type: array
+          items:
+            type: string
+          description: CSV column headers
+          example: ["name", "age", "city", "salary"]
+        data:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: string
+          description: CSV data rows as objects
+          example:
+            - name: "John Doe"
+              age: "30"
+              city: "New York"
+              salary: "75000"
+            - name: "Jane Smith"
+              age: "28"
+              city: "Los Angeles"
+              salary: "68000"
+        fileName:
+          type: string
+          description: Original file name
+          example: "employees.csv"
+        uploadedAt:
+          type: string
+          format: date-time
+          description: Upload timestamp
+          example: "2024-01-15T10:30:00.000Z"
+      required:
+        - id
+        - headers
+        - data
+        - fileName
+        - uploadedAt
+
+tags:
+  - name: Health Check
+    description: Server health monitoring
+  - name: Authentication
+    description: User authentication and authorization
+  - name: CSV Processing
+    description: CSV file upload and data processing
+
+externalDocs:
+  description: Find more info about CSV Data Visualizer
+  url: https://github.com/your-repo/csv-data-visualizer

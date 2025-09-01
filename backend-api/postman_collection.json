@@ -1,0 +1,550 @@
+{
+	"info": {
+		"_postman_id": "csv-visualizer-api",
+		"name": "CSV Data Visualizer API",
+		"description": "Complete API collection for CSV Data Visualizer backend with authentication and CSV processing endpoints.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "csv-visualizer"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Server Health Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check if the API server is running and healthy"
+					},
+					"response": [
+						{
+							"name": "Healthy Server",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/health",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"health"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"status\": \"OK\",\n  \"message\": \"Backend API server is running\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Google OAuth Login",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/auth/google",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"google"
+							]
+						},
+						"description": "Initiates Google OAuth login flow. This will redirect to Google's consent screen."
+					},
+					"response": [
+						{
+							"name": "Redirect to Google",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/auth/google",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"google"
+									]
+								}
+							},
+							"status": "Found",
+							"code": 302,
+							"_postman_previewlanguage": "html",
+							"header": [
+								{
+									"key": "Location",
+									"value": "https://accounts.google.com/oauth/authorize?..."
+								}
+							],
+							"cookie": [],
+							"body": ""
+						}
+					]
+				},
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/auth/me",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"me"
+							]
+						},
+						"description": "Get the current authenticated user's information. Requires valid JWT token."
+					},
+					"response": [
+						{
+							"name": "User Info Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/auth/me",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"me"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"User retrieved successfully\",\n  \"success\": true,\n  \"data\": {\n    \"id\": \"clxxxxx\",\n    \"email\": \"user@example.com\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n    \"updatedAt\": \"2024-01-15T10:30:00.000Z\"\n  },\n  \"error\": null,\n  \"statusCode\": 200\n}"
+						},
+						{
+							"name": "Unauthorized",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/auth/me",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"me"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"Unauthorized\",\n  \"success\": false,\n  \"data\": null,\n  \"error\": \"No token provided\",\n  \"statusCode\": 401\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "CSV Processing",
+			"item": [
+				{
+					"name": "Upload CSV File",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/path/to/your/sample.csv",
+									"description": "CSV file to upload (max 5MB)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/csv/upload-csv",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"csv",
+								"upload-csv"
+							]
+						},
+						"description": "Upload a CSV file for processing. File must be CSV format and under 5MB."
+					},
+					"response": [
+						{
+							"name": "Upload Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": "/path/to/sample.csv"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/csv/upload-csv",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"csv",
+										"upload-csv"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"CSV file processed successfully\",\n  \"success\": true,\n  \"data\": {\n    \"id\": \"clxxxxx\",\n    \"headers\": [\"name\", \"age\", \"city\", \"salary\"],\n    \"rowCount\": 150,\n    \"fileName\": \"employees.csv\"\n  },\n  \"error\": null,\n  \"statusCode\": 200\n}"
+						},
+						{
+							"name": "No File Uploaded",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": []
+								},
+								"url": {
+									"raw": "{{base_url}}/api/csv/upload-csv",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"csv",
+										"upload-csv"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"No file uploaded\",\n  \"success\": false,\n  \"data\": null,\n  \"error\": null,\n  \"statusCode\": 400\n}"
+						},
+						{
+							"name": "File Too Large",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": "/path/to/large-file.csv"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/csv/upload-csv",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"csv",
+										"upload-csv"
+									]
+								}
+							},
+							"status": "Payload Too Large",
+							"code": 413,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"File too large\",\n  \"success\": false,\n  \"data\": null,\n  \"error\": \"File size exceeds 5MB limit\",\n  \"statusCode\": 413\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Latest CSV Data",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/csv/latest-csv-data",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"csv",
+								"latest-csv-data"
+							]
+						},
+						"description": "Retrieve the most recently uploaded CSV file data for visualization."
+					},
+					"response": [
+						{
+							"name": "Latest Data Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/csv/latest-csv-data",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"csv",
+										"latest-csv-data"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"Latest CSV data retrieved successfully\",\n  \"success\": true,\n  \"data\": {\n    \"id\": \"clxxxxx\",\n    \"headers\": [\"name\", \"age\", \"city\", \"salary\"],\n    \"data\": [\n      {\n        \"name\": \"John Doe\",\n        \"age\": \"30\",\n        \"city\": \"New York\",\n        \"salary\": \"75000\"\n      },\n      {\n        \"name\": \"Jane Smith\",\n        \"age\": \"28\",\n        \"city\": \"Los Angeles\",\n        \"salary\": \"68000\"\n      }\n    ],\n    \"fileName\": \"employees.csv\",\n    \"uploadedAt\": \"2024-01-15T10:30:00.000Z\"\n  },\n  \"error\": null,\n  \"statusCode\": 200\n}"
+						},
+						{
+							"name": "No Data Found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/csv/latest-csv-data",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"csv",
+										"latest-csv-data"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"No CSV data found\",\n  \"success\": false,\n  \"data\": null,\n  \"error\": null,\n  \"statusCode\": 404\n}"
+						}
+					]
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Pre-request script for CSV Data Visualizer API",
+					"// This script can be used to set up authentication tokens or other variables",
+					"",
+					"// Example: Set timestamp for requests",
+					"pm.globals.set('timestamp', new Date().toISOString());",
+					"",
+					"// Log the current request for debugging",
+					"console.log('Making request to:', pm.request.url.toString());"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global test script for CSV Data Visualizer API",
+					"// This script runs after every request",
+					"",
+					"// Test for successful response structure",
+					"if (pm.response.code === 200) {",
+					"    pm.test('Response has correct structure', function () {",
+					"        const jsonData = pm.response.json();",
+					"        pm.expect(jsonData).to.have.property('success');",
+					"        pm.expect(jsonData).to.have.property('message');",
+					"        pm.expect(jsonData).to.have.property('statusCode');",
+					"        pm.expect(jsonData.success).to.be.true;",
+					"    });",
+					"}",
+					"",
+					"// Test for error response structure",
+					"if (pm.response.code >= 400) {",
+					"    pm.test('Error response has correct structure', function () {",
+					"        const jsonData = pm.response.json();",
+					"        pm.expect(jsonData).to.have.property('success');",
+					"        pm.expect(jsonData).to.have.property('message');",
+					"        pm.expect(jsonData).to.have.property('statusCode');",
+					"        pm.expect(jsonData.success).to.be.false;",
+					"    });",
+					"}",
+					"",
+					"// Log response time",
+					"console.log('Response time:', pm.response.responseTime + 'ms');"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3001",
+			"type": "string",
+			"description": "Base URL for the CSV Data Visualizer API"
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string",
+			"description": "JWT access token obtained from Google OAuth login"
+		},
+		{
+			"key": "refresh_token",
+			"value": "",
+			"type": "string",
+			"description": "JWT refresh token for obtaining new access tokens"
+		}
+	]
+}
